@@ -1,17 +1,11 @@
 
 import re
-import ollama
-
-MODEL_NAME = "qwen3:4b"
+from ai_provider import generate_ai_text
 
 
 def generate_ai_insights(summary=None, df=None):
 
     prompt = f"""
-/no_think
-
-You are a professional data analyst.
-
 Analyze this dataset summary:
 
 {summary}
@@ -25,7 +19,7 @@ Write a concise report using these five sections:
 5. Conclusion
 
 Rules:
-- Write a maximum of 150 words in total.
+- Maximum 150 words in total.
 - Use simple English.
 - Focus on important findings.
 - Do not repeat every statistic.
@@ -36,31 +30,17 @@ Rules:
 - Return only the final report.
 """
 
-    response = ollama.chat(
-        model=MODEL_NAME,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "/no_think\n"
-                    "Return a concise final data analysis report only."
-                )
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        options={
-            "temperature": 0.1,
-            "num_predict": 1500
-        },
-        think=False
+    system_prompt = (
+        "You are a professional data analyst. "
+        "Return only a concise final data analysis report."
     )
 
-    insights = response["message"]["content"].strip()
+    insights = generate_ai_text(
+        prompt=prompt,
+        system_prompt=system_prompt,
+        max_tokens=1500
+    )
 
-    # Remove complete reasoning blocks, if present.
     insights = re.sub(
         r"<think>.*?</think>",
         "",
@@ -68,12 +48,10 @@ Rules:
         flags=re.DOTALL | re.IGNORECASE
     ).strip()
 
-    # Remove reasoning preceding a closing tag.
     if "</think>" in insights.lower():
         position = insights.lower().rfind("</think>")
         insights = insights[position + len("</think>"):].strip()
 
-    # Avoid displaying unfinished reasoning.
     if "<think>" in insights.lower():
         return "The AI response was incomplete. Please try again."
 

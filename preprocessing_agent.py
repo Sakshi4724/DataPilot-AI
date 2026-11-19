@@ -8,9 +8,7 @@ import pandas as pd
 
 import streamlit as st
 
-import ollama
-
-MODEL_NAME = "qwen3:4b"
+from ai_provider import generate_ai_text
 
 # =========================================================
 
@@ -581,53 +579,20 @@ Do not repeat the dataset information or operation details.
 
 
 
-        messages = [
-            {
-                "role": "system",
-                "content": "Return only one plain-text review sentence. Never return JSON."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+        system_prompt = (
+            "Return only one plain-text review sentence. "
+            "Never return JSON."
+        )
 
         try:
-            response = ollama.chat(
-                model=MODEL_NAME,
-                messages=messages,
-                options={
-                    "temperature": 0.1,
-                    "num_predict": 150
-                },
-                think=False
+            raw_text = generate_ai_text(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                max_tokens=150
             )
-        except TypeError:
-            response = ollama.chat(
-                model=MODEL_NAME,
-                messages=messages,
-                options={
-                    "temperature": 0.1,
-                    "num_predict": 150
-                }
-            )
-
-        if isinstance(response, dict):
-            message = response.get("message", {})
-            raw_content = (
-                message.get("content", "")
-                if isinstance(message, dict) else ""
-            )
-        else:
-            message = getattr(response, "message", None)
-            raw_content = (
-                message.get("content", "")
-                if isinstance(message, dict)
-                else getattr(message, "content", "")
-                if message is not None else ""
-            )
-
-        raw_text = str(raw_content or "").strip()
+        except Exception as e:
+            print("AI review generation failed:", str(e))
+            raw_text = ""
         print("\n========== DATAPILOT AI DEBUG ==========")
         print("COLUMN BEING REVIEWED:", column_name)
         print("PROMPT SENT TO QWEN:\n", prompt)
