@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+.env
+*_test.csv
+agent_test.csv
+test_ollama.py
+animation_test.py
