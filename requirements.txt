@@ -51,3 +51,4 @@ websockets==17.3
 
 
 plotly==7.1.0
+google-genai
